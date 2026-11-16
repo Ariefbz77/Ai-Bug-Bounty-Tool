@@ -2,7 +2,7 @@
 
 AI agent frameworks & toolkits for bug bounty hunting — install guide, curated list, and a ready-to-run recon pipeline. Built so anyone can install the tools and start hunting.
 
-## Batch 1 — What's inside (install with `./install.sh`)
+## Batch 1 — What's inside (install with `bash install.sh`)
 
 Batch 1 is the first verified install (2026-11-16). Binaries are **not** vendored here — `install.sh` downloads them from their official releases, pinned to the versions below. Batches 2–4 (more tools) are coming next, in the same style.
 
@@ -28,22 +28,22 @@ Batch 1 is the first verified install (2026-11-16). Binaries are **not** vendore
 
 **Files in this repo (Batch 1):**
 
-- `install.sh` — installs everything above. Re-running is safe (present tools are skipped). `DRY_RUN=1 ./install.sh` prints the plan without installing anything.
+- `install.sh` — installs everything above. Re-running is safe (present tools are skipped). `DRY_RUN=1 bash install.sh` prints the plan without installing anything. (Scripts land without the executable bit on GitHub — run them with `bash`, or `chmod +x` first.)
 - `recon.sh` — the verified recon pipeline (amass + subfinder → dnsx → httpx → nuclei). See `RECON-PIPELINE.md` for the file-first workflow.
 - `RECON-PIPELINE.md` — how to run recon and hand the results to your AI agent without burning context.
 
 **Quick start:**
 
 ```bash
-./install.sh
+bash install.sh
 export PATH="$HOME/bug-bounty-tools/bin:$HOME/.local/bin:$PATH"
 bughunter setup        # pick a free provider (Ollama / Groq / DeepSeek)
-./recon.sh example.com # results in recon_example.com/SUMMARY.md
+bash recon.sh example.com # results in recon_example.com/SUMMARY.md
 ```
 
 Note: `recon.sh` looks for the tools next to itself (`./bin`), then in `~/bug-bounty-tools/bin` (the `install.sh` default), then on `PATH` — override with `BUG_BOUNTY_BIN=/path/to/bin`.
 
-## Batch 2 — What's inside (install with `./install-batch2.sh`)
+## Batch 2 — What's inside (install with `bash install-batch2.sh`)
 
 Batch 2 is the exploit / hunting expansion (2026-11-16). Skills are **vendored in this repo** (`skills/batch2/` — 198 sub-skills + 8 index skills, 9.7 MB); binaries are downloaded by the script, pinned to the versions below. Batches 3–4 are coming next, in the same style.
 
@@ -84,7 +84,7 @@ Batch 2 is the exploit / hunting expansion (2026-11-16). Skills are **vendored i
 
 **Files in this repo (Batch 2):**
 
-- `install-batch2.sh` — installs everything above. `DRY_RUN=1 ./install-batch2.sh` prints the plan. Knobs: `SKILLS_SKIP=1`, `SECLISTS_SKIP=1`, `OLLAMA_INSTALL=1`, `SKILLS_DIR=/path`.
+- `install-batch2.sh` — installs everything above. `DRY_RUN=1 bash install-batch2.sh` prints the plan. Knobs: `SKILLS_SKIP=1`, `SECLISTS_SKIP=1`, `OLLAMA_INSTALL=1`, `SKILLS_DIR=/path`.
 - `skills/batch2/` — the 198 hunting skills (hm-* 52, bg-find-* 17, cbh-* 83, tc-* 43, hs-* 3) + 8 index skills, copied by the script to `SKILLS_DIR` (default `~/workspace/custom-skills`). One binary asset is excluded on purpose: the `archivo-black.woff2` font inside `cbh-offensive-osint` (the repo push only accepts UTF-8 text) — the skill works without it.
 
 **Notes:**
@@ -93,6 +93,30 @@ Batch 2 is the exploit / hunting expansion (2026-11-16). Skills are **vendored i
 - Ollama is opt-in because local models need ~5–9 GB free RAM for 7b/14b — not viable on small VMs. The recommended free provider stays Groq/DeepSeek (key supplied by you, never in a file). No model is ever pulled by these scripts.
 - CAI needs an LLM API key to do anything; Hunter's MCP server is installed but not started (wire it from an MCP client).
 - Go builds and pip installs use `$INSTALL_DIR/tmp` as TMPDIR — `/tmp` on small VMs is often a 512 MB tmpfs and big builds exhaust it.
+
+## Batch 3 — What's inside (install with `bash install-batch3.sh`)
+
+Batch 3 is the static-analysis + fuzzing + secrets gap fill (2026-11-16). Prereq: batches 1 + 2 first (it reuses their `venv-exploit`, Go toolchain and `$BIN` layout) — or just run `bash install-all.sh`.
+
+| Tool | Version | Installed by |
+|------|---------|--------------|
+| semgrep | 1.185.0 | pip (venv-exploit) + `$BIN/semgrep` shim |
+| gosec | 2.30.0 (dev build) | `go install` → `gopath2/bin` + `$BIN` wrapper (Go on PATH at scan time) |
+| staticcheck | 2026.2.2 (v0.8.2) | `go install` → `gopath2/bin` + `$BIN` wrapper |
+| medusa | 1.5.1 | `go install` → `gopath2/bin` + `$BIN` wrapper (also prepends venv-exploit/bin so `crytic-compile` resolves) |
+| heimdall | 0.9.3 (tag `0.9.3`, no v-prefix) | release binary (asset `heimdall-linux-amd64`) |
+| gitleaks | 8.30.1 | release binary (SHA256-verified) |
+
+**Files in this repo (Batch 3):**
+
+- `install-batch3.sh` — installs everything above. `DRY_RUN=1 bash install-batch3.sh` prints the plan.
+
+**Notes:**
+
+- semgrep's install bumps `mcp` to 1.29.0, which breaks CAI (hangs) and Hunter (needs `mcp<1.29`). The script pins `mcp==1.28.1` back right after installing semgrep — semgrep scanning still works on 1.28.1, and CAI's CLI starts again as a side effect.
+- heimdall's `--version` prints stale `0.9.2` inside the 0.9.3 asset — a known upstream string lag, not a wrong download. Do not "fix" it by re-downloading.
+- heimdall writes only `abi.json` by default — Solidity source needs the `--include-sol` flag.
+- medusa fuzzing needs `crytic-compile` on PATH (installed as a Slither dependency in venv-exploit; the wrapper handles it).
 
 ## Top AI Agent Frameworks / Toolkits for Bug Bounty
 
