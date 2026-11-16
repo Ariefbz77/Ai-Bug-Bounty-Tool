@@ -2,6 +2,47 @@
 
 AI agent frameworks & toolkits for bug bounty hunting — install guide, curated list, and a ready-to-run recon pipeline. Built so anyone can install the tools and start hunting.
 
+## Batch 1 — What's inside (install with `./install.sh`)
+
+Batch 1 is the first verified install (2026-11-16). Binaries are **not** vendored here — `install.sh` downloads them from their official releases, pinned to the versions below. Batches 2–4 (more tools) are coming next, in the same style.
+
+| Tool | Version | Installed by |
+|------|---------|--------------|
+| subfinder | 2.17.0 | release binary |
+| httpx | 1.12.0 | release binary |
+| nuclei | 3.11.1 | release binary |
+| katana | 1.8.0 | release binary |
+| dnsx | 1.3.1 | release binary |
+| ffuf | 2.3.0 | release binary |
+| gau | 2.2.4 | release binary |
+| amass | 4.2.0 | `go install` |
+| dalfox | 2.13.0 | `go install` |
+| subjack | pinned pseudo-version `v0.0.0-20260316055456-b53899ce6230` | `go install` |
+| nmap | 7.94 | apt |
+| agentic-bug-hunter (`bughunter`) | 6.0.2 | pipx |
+| sqlmap | 1.10.11 | pipx |
+| bbot | 3.1.0 | pipx |
+| nuclei-templates | git HEAD `fe25b05` (at install time) | git clone → `~/nuclei-templates` |
+| Agentic-Bug-Hunter (framework repo) | commit `82f4512` | git clone |
+| pentest-agents (framework repo) | commit `41d49b6` | git clone |
+
+**Files in this repo (Batch 1):**
+
+- `install.sh` — installs everything above. Re-running is safe (present tools are skipped). `DRY_RUN=1 ./install.sh` prints the plan without installing anything.
+- `recon.sh` — the verified recon pipeline (amass + subfinder → dnsx → httpx → nuclei). See `RECON-PIPELINE.md` for the file-first workflow.
+- `RECON-PIPELINE.md` — how to run recon and hand the results to your AI agent without burning context.
+
+**Quick start:**
+
+```bash
+./install.sh
+export PATH="$HOME/bug-bounty-tools/bin:$HOME/.local/bin:$PATH"
+bughunter setup        # pick a free provider (Ollama / Groq / DeepSeek)
+./recon.sh example.com # results in recon_example.com/SUMMARY.md
+```
+
+Note: `recon.sh` looks for the tools next to itself (`./bin`), then in `~/bug-bounty-tools/bin` (the `install.sh` default), then on `PATH` — override with `BUG_BOUNTY_BIN=/path/to/bin`.
+
 ## Top AI Agent Frameworks / Toolkits for Bug Bounty
 
 | Tool / Project | Type | Key Strengths | Notes |
