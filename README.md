@@ -43,6 +43,57 @@ bughunter setup        # pick a free provider (Ollama / Groq / DeepSeek)
 
 Note: `recon.sh` looks for the tools next to itself (`./bin`), then in `~/bug-bounty-tools/bin` (the `install.sh` default), then on `PATH` — override with `BUG_BOUNTY_BIN=/path/to/bin`.
 
+## Batch 2 — What's inside (install with `./install-batch2.sh`)
+
+Batch 2 is the exploit / hunting expansion (2026-11-16). Skills are **vendored in this repo** (`skills/batch2/` — 198 sub-skills + 8 index skills, 9.7 MB); binaries are downloaded by the script, pinned to the versions below. Batches 3–4 are coming next, in the same style.
+
+| Tool | Version | Installed by |
+|------|---------|--------------|
+| naabu | 2.7.0 | `go install` |
+| tlsx | 1.4.5 | `go install` |
+| uncover | 1.2.1 | `go install` |
+| chaos | 0.5.2 | `go install` |
+| waybackurls | 0.1.0 | `go install` |
+| anew | 0.1.1 | `go install` |
+| gf | pseudo `20200618-dcd4c361f9f5` | `go install` |
+| assetfinder | 0.1.1 | `go install` |
+| hakrawler | pseudo `20260805-52a16fe61bd1` | `go install` |
+| trufflehog | clone @ `72cae0f` | `go build` from clone (`go install` fails on its go.mod replace directives) |
+| arjun | 2.2.7 | pip (venv-exploit) |
+| commix | 0.1 | pip (venv-exploit) |
+| slither-analyzer (`slither`) | 0.11.6 | pip (venv-exploit) |
+| solc-select (`solc`) | 1.2.0 (solc 0.8.26 set current) | pip (venv-exploit) |
+| mythril (`myth`) | 0.24.8 | pip (venv-exploit) |
+| huntkit | 0.3.0 | pip (venv-exploit) |
+| cai-framework (`cai`) | 0.5.10 | pip (venv-exploit) |
+| ParamSpider | clone @ `c44bdaa` | pip editable install (NOT on PyPI) |
+| XSStrike | v3.1.5 (clone @ `ab27955`) | git clone + venv deps |
+| echidna | 2.4.0 | release binary |
+| sisakulint | 0.3.8 | release binary (SHA256-verified) |
+| HuntMCP | commit `1fc17bb` | git clone |
+| BountyGrimoire | commit `c55f833` | git clone |
+| Claude-BugHunter | commit `2cfe533` | git clone |
+| HexStrike AI | commit `d689933` | git clone (code only — server NOT started here) |
+| Hunter (+ `hunter-mcp`) | commit `333d0c5` | git clone + own venv (mcp 1.28.1) |
+| CAI (repo) | commit `6dc7925` | git clone (reference only — the CLI is the PyPI 0.5.10 line) |
+| communitytools | commit `95fdc12` | git clone |
+| cybersecurity-claude-skills | commit `802e2f2` | git clone |
+| Gf-Patterns | commit `f686f06` | git clone (14 `*.json` → `~/.gf/`) |
+| SecLists | git clone | git clone (~2.5 GB — `SECLISTS_SKIP=1` to skip) |
+| Ollama | 0.40.16 (binary only, NO models) | OPT-IN only (`OLLAMA_INSTALL=1`) |
+
+**Files in this repo (Batch 2):**
+
+- `install-batch2.sh` — installs everything above. `DRY_RUN=1 ./install-batch2.sh` prints the plan. Knobs: `SKILLS_SKIP=1`, `SECLISTS_SKIP=1`, `OLLAMA_INSTALL=1`, `SKILLS_DIR=/path`.
+- `skills/batch2/` — the 198 hunting skills (hm-* 52, bg-find-* 17, cbh-* 83, tc-* 43, hs-* 3) + 8 index skills, copied by the script to `SKILLS_DIR` (default `~/workspace/custom-skills`). One binary asset is excluded on purpose: the `archivo-black.woff2` font inside `cbh-offensive-osint` (the repo push only accepts UTF-8 text) — the skill works without it.
+
+**Notes:**
+
+- Aderyn was deliberately NOT installed: retired upstream (its installer refuses; Slither covers the same ground).
+- Ollama is opt-in because local models need ~5–9 GB free RAM for 7b/14b — not viable on small VMs. The recommended free provider stays Groq/DeepSeek (key supplied by you, never in a file). No model is ever pulled by these scripts.
+- CAI needs an LLM API key to do anything; Hunter's MCP server is installed but not started (wire it from an MCP client).
+- Go builds and pip installs use `$INSTALL_DIR/tmp` as TMPDIR — `/tmp` on small VMs is often a 512 MB tmpfs and big builds exhaust it.
+
 ## Top AI Agent Frameworks / Toolkits for Bug Bounty
 
 | Tool / Project | Type | Key Strengths | Notes |
