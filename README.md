@@ -145,6 +145,38 @@ Batch 4 is the desktop-proxy + MCP-server finish (2026-11-16). Prereq: batches 1
   # STOP it when done. Never expose port 8888.
   ```
 
+## Batch 5 — What's inside (install with `bash install-batch5.sh`)
+
+Batch 5 is the remaining-OP-tools finish (2026-11-16): OOB interaction, dir busting, LLM red-teaming, screenshot recon, hidden-param discovery. Prereq: batch 1 first (it reuses its `$BIN` layout) — or just run `bash install-all.sh`.
+
+| Tool | Version | Installed by |
+|------|---------|--------------|
+| interactsh-client | 1.4.1 | zip from `github.com/projectdiscovery/interactsh`, SHA256-verified against the release checksums file → `$BIN/interactsh-client` |
+| interactsh-server | 1.4.1 | same release, same verification → `$BIN/interactsh-server` |
+| feroxbuster | 2.14.0 | tarball `x86_64-linux-feroxbuster.tar.gz` → `$BIN/feroxbuster` |
+| garak | 0.17.1 | own venv (`venv-garak`), `pip install garak==0.17.1`, thin wrapper `$BIN/garak` |
+| gowitness | 3.2.2 | single 50 MB binary → `$BIN/gowitness` |
+| x8 | 4.3.0 | release asset `x86_64-linux-x8.gz`, gunzipped → `$BIN/x8` |
+
+**Files in this repo (Batch 5):**
+
+- `install-batch5.sh` — installs everything above. `DRY_RUN=1 bash install-batch5.sh` prints the plan. Knob: `GARAK_SKIP=1` (skips the heavy garak pip install).
+- `install-all.sh` — runs all five batches in order (1 → 2 → 3 → 4 → 5), stops at the first failure, skips what's already installed on re-run. `DRY_RUN=1 bash install-all.sh` prints every batch's plan.
+
+**Notes:**
+
+- The other 8 tools named for batch 5 (naabu, tlsx, uncover, chaos, hakrawler, waybackurls, anew, arjun) were ALREADY installed by batch 2 — they are not reinstalled here. Aquatone (v1.7.0, 2019, unmaintained) is NOT installed; gowitness 3.2.2 is the maintained replacement and does the same job.
+- interactsh-client defaults to ProjectDiscovery's public OOB instance (oast.pro). Self-host with interactsh-server only if you have a domain + DNS for it. OOB payloads phone home — use only for in-scope testing.
+- garak downloads NO models at install time — it talks to an API generator (OpenAI/Groq/…) or a local model you point it at. Its install is heavy (~1 GB venv, mostly torch): on a flaky connection, install torch first from the CPU-only index (`pip install torch --index-url https://download.pytorch.org/whl/cpu`, ~190 MB instead of the 539 MB CUDA wheel), then `pip install garak`.
+- gowitness needs a Chrome/Chromium binary at SCAN time — it downloads one itself by default; pass `--chrome-path` to use an existing one (e.g. a Playwright `chromium-headless-shell`). Verified on a local target: `gowitness scan file -f targets.txt` produced a real 1280x720 JPEG screenshot. Quick uses:
+  ```bash
+  interactsh-client -v            # get a callback URL, watch for hits
+  feroxbuster -u https://target/ -w wordlist.txt
+  garak --model_type openai --model_name gpt-4o -p promptinject  # needs an API key
+  printf 'https://target/\n' > targets.txt && gowitness scan file -f targets.txt
+  x8 -u 'https://target/?x=1' -w wordlist.txt
+  ```
+
 ## Top AI Agent Frameworks / Toolkits for Bug Bounty
 
 | Tool / Project | Type | Key Strengths | Notes |
