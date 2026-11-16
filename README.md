@@ -4,7 +4,7 @@ AI agent frameworks & toolkits for bug bounty hunting — install guide, curated
 
 ## Batch 1 — What's inside (install with `bash install.sh`)
 
-Batch 1 is the first verified install (2026-11-16). Binaries are **not** vendored here — `install.sh` downloads them from their official releases, pinned to the versions below. Batches 2–4 (more tools) are coming next, in the same style.
+Batch 1 is the first verified install (2026-11-16). Binaries are **not** vendored here — `install.sh` downloads them from their official releases, pinned to the versions below. Batches 2–4 are in too — see below. Run `bash install-all.sh` for everything at once.
 
 | Tool | Version | Installed by |
 |------|---------|--------------|
@@ -117,6 +117,33 @@ Batch 3 is the static-analysis + fuzzing + secrets gap fill (2026-11-16). Prereq
 - heimdall's `--version` prints stale `0.9.2` inside the 0.9.3 asset — a known upstream string lag, not a wrong download. Do not "fix" it by re-downloading.
 - heimdall writes only `abi.json` by default — Solidity source needs the `--include-sol` flag.
 - medusa fuzzing needs `crytic-compile` on PATH (installed as a Slither dependency in venv-exploit; the wrapper handles it).
+
+## Batch 4 — What's inside (install with `bash install-batch4.sh`)
+
+Batch 4 is the desktop-proxy + MCP-server finish (2026-11-16). Prereq: batches 1–3 first (HexStrike resolves more of its tools when the earlier binaries are on PATH) — or just run `bash install-all.sh`.
+
+| Tool | Version | Installed by |
+|------|---------|--------------|
+| Caido CLI | 0.59.1 | tarball from `caido.download` → `$BIN/caido` |
+| Burp Suite Community | current Stable (verified 2026.3.3-47134 on 2026-11-16) | version-less installer download, unattended to `${BURP_DIR:-/opt/BurpSuiteCommunity}` |
+| HexStrike AI MCP server | 6.0.0 (MCP adapter 1.30.0) | git clone @ `d689933` + own venv + 127.0.0.1 patch, verified running then STOPPED |
+
+**Files in this repo (Batch 4):**
+
+- `install-batch4.sh` — installs everything above. `DRY_RUN=1 bash install-batch4.sh` prints the plan. Knobs: `BURP_DIR=/path`, `BURP_SKIP=1`, `HEXSTRIKE_SKIP=1`.
+- `install-all.sh` — runs all four batches in order (1 → 2 → 3 → 4), stops at the first failure, skips what's already installed on re-run. `DRY_RUN=1 bash install-all.sh` prints every batch's plan.
+
+**Notes:**
+
+- Caido Desktop (AppImage) is NOT installed — GUI-only; the CLI is the usable form on a headless machine. The CLI listens on 127.0.0.1:8080 by default.
+- Burp's download URL must be exactly `https://portswigger.net/burp/releases/download?product=community&type=linux` — lowercase `type=linux`, NO version param; every other form 404s. The version-less URL serves current Stable, so a later run may get a newer Stable than 2026.3.3-47134. The installer bundles its own JRE; no system Java needed. RAM: the launcher caps heap at 50% of system RAM — heavy on small VMs, prefer `--help`/`--version` checks and launch the GUI only when actually needed.
+- HexStrike's server hardcodes `app.run(host="0.0.0.0")` — the script patches it to `127.0.0.1` (original kept as `hexstrike_server.py.orig`). Its `requirements.txt` is installed MINUS pwntools/angr (only referenced inside generated-script template strings, never imported; angr costs ~1 GB for zero benefit). The server is unauthenticated local exec by design: it is verified (`/health` + tool resolution) and then STOPPED — never left running, never exposed beyond loopback. To run it when needed:
+  ```bash
+  cd ~/bug-bounty-tools/hexstrike-ai
+  PATH="$HOME/bug-bounty-tools/bin:$PATH" ./venv/bin/python hexstrike_server.py --port 8888
+  # then in another shell: ./venv/bin/python hexstrike_mcp.py --server http://127.0.0.1:8888
+  # STOP it when done. Never expose port 8888.
+  ```
 
 ## Top AI Agent Frameworks / Toolkits for Bug Bounty
 
